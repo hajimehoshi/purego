@@ -141,15 +141,15 @@ jobs:
   bsd:
     strategy:
       matrix:
-        os: ['FreeBSD', 'NetBSD']
+        os: ['freebsd', 'netbsd']
         go: ['1.18.10', '1.19.13', '1.20.14', '1.21.13', '1.22.12', '1.23.7', '1.24.1']
         exclude:
           # there are no prebuilt download links for these versions of Go for NetBSD
-          - os: NetBSD
+          - os: netbsd
             go: '1.18.10'
-          - os: NetBSD
+          - os: netbsd
             go: '1.19.13'
-          - os: NetBSD
+          - os: netbsd
             go: '1.20.14'
     name: Test with Go ${{ matrix.go }} on ${{ matrix.os }}
     runs-on: ubuntu-22.04
@@ -157,25 +157,25 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        run: |
+          curl --location --remote-name https://golang.org/dl/go${{ matrix.go }}.${{ matrix.os }}-amd64.tar.gz
+
       - name: Run in FreeBSD
-        if: matrix.os == 'FreeBSD'
+        if: matrix.os == 'freebsd'
         uses: vmactions/freebsd-vm@v1
         with:
           usesh: true
-          prepare: |
-            fetch https://go.dev/dl/go${{matrix.go}}.freebsd-amd64.tar.gz
-            rm -fr /usr/local/go && tar -C /usr/local -xf go${{matrix.go}}.freebsd-amd64.tar.gz
-            chmod +x $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
-          run: $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
+          prepare: chmod +x $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
+          run: $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh ${{ matrix.go }} ${{ matrix.os }}
+
       - name: Run in NetBSD
-        if: matrix.os == 'NetBSD'
+        if: matrix.os == 'netbsd'
         uses: vmactions/netbsd-vm@v1
         with:
           usesh: true
-          prepare: |
-            ftp https://go.dev/dl/go${{matrix.go}}.netbsd-amd64.tar.gz
-            mkdir /usr/local
-            rm -fr /usr/local/go && tar -C /usr/local -xf go${{matrix.go}}.netbsd-amd64.tar.gz
-            chmod +x $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
-          run: $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
+          prepare: chmod +x $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh
+          run: $GITHUB_WORKSPACE/.github/scripts/bsd_tests.sh ${{ matrix.go }} ${{ matrix.os }}

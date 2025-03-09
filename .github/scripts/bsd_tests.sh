@@ -8,8 +8,13 @@
 # brings down the VM at the end of the step, so all
 # the commands to run need to be put into this single block.
 
+matrix_go=$1
+matrix_os=$2
+
 echo "Running tests on $(uname -a) at $PWD"
 
+mkdir -p /usr/local
+rm -fr /usr/local/go && tar -C /usr/local -xf $GITHUB_WORKSPACE/go${matrix_go}.${matrix_os}-amd64.tar.gz
 PATH=$PATH:/usr/local/go/bin/
 
 # verify Go is available
@@ -64,7 +69,11 @@ go build -v .
 
 cd $GITHUB_WORKSPACE
 echo "=> go test CGO_ENABLED=0"
-env CGO_ENABLED=0 go test -gcflags="github.com/ebitengine/purego/internal/fakecgo=-std" -shuffle=on -v -count=10 ./...
+if [ $matrix_os = 'freebsd' ]; then
+  env CGO_ENABLED=0 go test -gcflags="github.com/ebitengine/purego/internal/fakecgo=-std" -shuffle=on -v -count=10 ./...
+else
+  env CGO_ENABLED=0 go test -shuffle=on -v -count=10 ./...
+fi
 
 echo "=> go test CGO_ENABLED=1"
 env CGO_ENABLED=1 go test -shuffle=on -v -count=10 ./...
